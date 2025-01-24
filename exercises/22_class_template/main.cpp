@@ -1,5 +1,7 @@
 ﻿#include "../exercise.h"
-
+#include <iostream>
+#include <cstring>
+#include <cmath>
 // READ: 类模板 <https://zh.cppreference.com/w/cpp/language/class_template>
 
 template<class T>
@@ -10,6 +12,10 @@ struct Tensor4D {
     Tensor4D(unsigned int const shape_[4], T const *data_) {
         unsigned int size = 1;
         // TODO: 填入正确的 shape 并计算 size
+        for(int i=0;i<4;++i){
+            shape[i]=shape_[i];
+            size*=shape_[i];//计算总大小
+        }
         data = new T[size];
         std::memcpy(data, data_, size * sizeof(T));
     }
@@ -28,6 +34,29 @@ struct Tensor4D {
     // 则 `this` 与 `others` 相加时，3 个形状为 `[1, 2, 1, 4]` 的子张量各自与 `others` 对应项相加。
     Tensor4D &operator+=(Tensor4D const &others) {
         // TODO: 实现单向广播的加法
+        for(int i=0;i<4;++i){
+            if(others.shape[i]!=shape[i]&&others.shape[i]!=1){
+                throw std::invalid_argument("shape");
+            }
+        }
+        unsigned int total=1;
+        for(int i=0;i<4;++i){
+            total *=shape[i];//计算总元素数
+        }
+        for(unsigned int i=0;i<total;++i){
+            unsigned int index =i;
+            unsigned int broadcast_index=0;
+            unsigned int stride =1;
+
+            for(int dim=3;dim>=0;--dim){
+                unsigned int coord=(index % shape[dim]);
+                index /=shape[dim];
+                broadcast_index += (others.shape[dim]==1?0:coord)*stride;
+                stride *=others.shape[dim];
+
+            }
+            data[i]+=others.data[broadcast_index];//广播加法
+        }
         return *this;
     }
 };
